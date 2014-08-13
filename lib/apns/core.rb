@@ -22,10 +22,7 @@ module APNS
     sock, ssl = self.open_connection
 
     packed_nofications = self.packed_nofications(notifications)
-
-    notifications.each do |n|
-      ssl.write(packed_nofications)
-    end
+    ssl.write(packed_nofications)
 
     ssl.close
     sock.close
