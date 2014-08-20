@@ -44,7 +44,8 @@ module APNS
       data = ''
       data << [1, pt.bytesize, pt].pack("CnA*")
       data << [2, pm.bytesize, pm].pack("CnA*")
-      data << [3, pi.bytesize, pi].pack("CnA*")
+      data << [3, 4, pi].pack("CnN")
+      # data << [3, pi.bytesize, pi].pack("CnA*")
       data << [4, 4, pe].pack("CnN")
       data << [5, 1, pr].pack("CnC")
       
