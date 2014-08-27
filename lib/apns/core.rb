@@ -10,9 +10,10 @@ module APNS
   @pass = nil
   @tcp_sock = nil
   @ssl_sock = nil
-  @chunk_size = 999999999
+  @chunk_size = 500
   @nID = 0
   @numb_reconnections = 0
+  @max_reconnections = 10
   @error_timeout = 0.4
 
   class << self
@@ -44,6 +45,8 @@ module APNS
       if tuple = @ssl_socket.read(6)
         _, code, notification_id = tuple.unpack("ccN")
         @nID = notification_id
+        # if get an error token than reconnection successful
+        @numb_reconnections = 0
       else
         puts "Error - do not read error code ! "
       end
@@ -51,7 +54,8 @@ module APNS
       begin
         puts("Error received, reconnecting...")
         @numb_reconnections += 1
-        raise "APNS: many consecutive reconnections !" if @numb_reconnections > 10
+        puts "APNS: many consecutive reconnections !"
+        raise "APNS: many consecutive reconnections !" if @numb_reconnections > @max_reconnections
         # reconnect
         @ssl_socket.close
         @tcp_socket.close
