@@ -6,18 +6,19 @@ module APNS
   @host = 'gateway.sandbox.push.apple.com'
   @port = 2195
   # openssl pkcs12 -in mycert.p12 -out client-cert.pem -nodes -clcerts
-  @pem = nil # this should be the path of the pem file not the contentes
+  # @pem = nil # this should be the path of the pem file not the contentes
+  @ext_cert = nil
   @pass = nil
   @tcp_sock = nil
   @ssl_sock = nil
-  @chunk_size = 500
+  @chunk_size = 200
   @nID = 0
   @numb_reconnections = 0
   @max_reconnections = 10
-  @error_timeout = 0.4
+  @error_timeout = 1
 
   class << self
-    attr_accessor :host, :pem, :port, :pass, :chunk_size, :error_timeout
+    attr_accessor :host, :ext_cert, :port, :pass, :chunk_size, :error_timeout
   end
 
   ##
@@ -52,11 +53,11 @@ module APNS
       end
 
       begin
+        # reconnect
         puts("Error received, reconnecting...")
         @numb_reconnections += 1
-        puts "APNS: many consecutive reconnections !"
         raise "APNS: many consecutive reconnections !" if @numb_reconnections > @max_reconnections
-        # reconnect
+        
         @ssl_socket.close
         @tcp_socket.close
 
@@ -167,12 +168,11 @@ module APNS
   protected
 
   def self.open_connection
-    raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
-    raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
+    raise "Certificate is not set." unless self.ext_cert
 
     context      = OpenSSL::SSL::SSLContext.new
-    context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
-    context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
+    context.cert = OpenSSL::X509::Certificate.new(self.ext_cert)
+    context.key  = OpenSSL::PKey::RSA.new(self.ext_cert, self.pass)
 
     sock         = TCPSocket.new(self.host, self.port)
     ssl          = OpenSSL::SSL::SSLSocket.new(sock,context)
@@ -182,12 +182,11 @@ module APNS
   end
 
   def self.feedback_connection
-    raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
-    raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
+    raise "Certificate is not set." unless self.ext_cert
 
     context      = OpenSSL::SSL::SSLContext.new
-    context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
-    context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
+    context.cert = OpenSSL::X509::Certificate.new(self.ext_cert)
+    context.key  = OpenSSL::PKey::RSA.new(self.ext_cert, self.pass)
 
     fhost = self.host.gsub('gateway','feedback')
     puts fhost
